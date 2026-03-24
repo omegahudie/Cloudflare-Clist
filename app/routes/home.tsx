@@ -1,3 +1,63 @@
+import { useEffect, useState } from 'react';
+
+// 配置类型
+interface SiteConfig {
+  siteTitle: string;
+  siteAnnouncement: string;
+  backgroundImageUrl: string;
+  webdavEnabled: boolean;
+}
+
+// 背景组件
+const BackgroundWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [config, setConfig] = useState<SiteConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // 从 Workers 获取配置
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => {
+        setConfig(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="min-h-screen bg-zinc-900" />;
+
+  return (
+    <div
+      className="relative min-h-screen w-full bg-cover bg-center bg-fixed bg-no-repeat"
+      style={{ 
+        backgroundImage: config?.backgroundImageUrl 
+          ? `url('${config.backgroundImageUrl}')` 
+          : undefined 
+      }}
+    >
+      {/* 遮罩层 - 提升文字可读性 */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+      
+      {/* 内容层 */}
+      <div className="relative z-10 min-h-screen">
+        {children}
+      </div>
+    </div>
+  );
+};
+
+// Home 页面使用
+export default function Home() {
+  return (
+    <BackgroundWrapper>
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold text-white">CList</h1>
+        {/* 其他内容 */}
+      </div>
+    </BackgroundWrapper>
+  );
+}
+
 import type { Route } from "./+types/home";
 import { requireAuth } from "~/lib/auth";
 import { getAllStorages, getPublicStorages, initDatabase } from "~/lib/storage";
