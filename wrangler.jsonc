@@ -1,1 +1,25 @@
-XXWL8FQYP62MW9T5
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "clist",
+  "main": "./workers/app.ts",
+  "compatibility_date": "2025-04-04",
+  "vars": {
+    "VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare",
+    "ADMIN_USERNAME": "admin",
+    "ADMIN_PASSWORD": "changeme",
+    "SITE_TITLE": "CList",
+    "SITE_ANNOUNCEMENT": "Welcome to CList storage service!",
+    "CHUNK_SIZE_MB": "10",
+    "WEBDAV_ENABLED": "false",
+    "WEBDAV_USERNAME": "webdav",
+    "WEBDAV_PASSWORD": "changeme",
+    "BACKGROUND_IMAGE_URL": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1920&q=80"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "clist",
+      "database_id": "00000000-0000-0000-0000-000000000000"
+    }
+  ]
+}
