@@ -8,13 +8,25 @@ interface SiteConfig {
   webdavEnabled: boolean;
 }
 
-// 背景组件
 const BackgroundWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [config, setConfig] = useState<SiteConfig | null>(null);
   const [loading, setLoading] = useState(true);
+  const [customUrl, setCustomUrl] = useState('');  // 输入框状态
+  const [showSettings, setShowSettings] = useState(false);
+
+  // 获取最终背景 URL（本地覆盖 > 服务器配置）
+  const getBackgroundUrl = (): string => {
+    if (typeof window === 'undefined') return '';
+    const localUrl = localStorage.getItem('customBgUrl');
+    return localUrl || config?.backgroundImageUrl || '';
+  };
 
   useEffect(() => {
-    // 从 Workers 获取配置
+    // 初始化时读取本地存储的自定义 URL
+    const saved = localStorage.getItem('customBgUrl');
+    if (saved) setCustomUrl(saved);
+
+    // 从服务器获取配置
     fetch('/api/config')
       .then(res => res.json())
       .then(data => {
@@ -24,39 +36,88 @@ const BackgroundWrapper: React.FC<{ children: React.ReactNode }> = ({ children }
       .catch(() => setLoading(false));
   }, []);
 
+  const applyCustomBg = () => {
+    if (customUrl.trim()) {
+      localStorage.setItem('customBgUrl', customUrl.trim());
+    } else {
+      localStorage.removeItem('customBgUrl');  // 清空则恢复默认
+    }
+    window.location.reload();
+  };
+
   if (loading) return <div className="min-h-screen bg-zinc-900" />;
+
+  const bgUrl = getBackgroundUrl();
 
   return (
     <div
       className="relative min-h-screen w-full bg-cover bg-center bg-fixed bg-no-repeat"
-      style={{ 
-        backgroundImage: config?.backgroundImageUrl 
-          ? `url('${config.backgroundImageUrl}')` 
-          : undefined 
-      }}
+      style={{ backgroundImage: bgUrl ? `url('${bgUrl}')` : undefined }}
     >
-      {/* 遮罩层 - 提升文字可读性 */}
+      {/* 遮罩层 */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
       
       {/* 内容层 */}
       <div className="relative z-10 min-h-screen">
         {children}
       </div>
+
+      {/* 设置按钮 */}
+      <button 
+        onClick={() => setShowSettings(!showSettings)}
+        className="fixed bottom-4 right-4 p-2 bg-white/20 hover:bg-white/30 rounded-full text-white transition"
+        title="更换背景"
+      >
+        🖼️
+      </button>
+
+      {/* 设置面板 */}
+      {showSettings && (
+        <div className="fixed bottom-16 right-4 p-4 bg-zinc-900/90 rounded-lg shadow-lg w-80 z-50">
+          <h3 className="text-white font-bold mb-2">自定义背景</h3>
+          <input
+            type="text"
+            value={customUrl}
+            onChange={(e) => setCustomUrl(e.target.value)}
+            placeholder="输入图片 URL（留空恢复默认）"
+            className="w-full px-3 py-2 bg-zinc-800 text-white rounded mb-2 text-sm"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={applyCustomBg}
+              className="flex-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-sm"
+            >
+              应用
+            </button>
+            <button
+              onClick={() => setShowSettings(false)}
+              className="px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 text-white rounded text-sm"
+            >
+              关闭
+            </button>
+          </div>
+          {config?.backgroundImageUrl && (
+            <p className="text-zinc-400 text-xs mt-2">
+              默认: {config.backgroundImageUrl.slice(0, 30)}...
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 };
 
-// Home 页面使用
+// 使用
 export default function Home() {
   return (
     <BackgroundWrapper>
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-white">CList</h1>
-        {/* 其他内容 */}
       </div>
     </BackgroundWrapper>
   );
 }
+
 
 import type { Route } from "./+types/home";
 import { requireAuth } from "~/lib/auth";
